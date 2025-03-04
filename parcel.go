@@ -96,29 +96,13 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 }
 
 func (s ParcelStore) SetAddress(number int, address string) error {
-	// Получаем текущий статус посылки
-	var currentStatus string
-	err := s.db.QueryRow("SELECT status FROM parcel WHERE Number = :number", sql.Named("number", number)).Scan(&currentStatus)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("посылка с номером %d не найдена", number)
-		}
-		return fmt.Errorf("ошибка при получении статуса посылки: %w", err)
-	}
 
-	// Проверяем, что статус равен "registered"
-	if currentStatus != "registered" {
-		return fmt.Errorf("нельзя изменить адрес: статус посылки должен быть 'registered', текущий статус: '%s'", currentStatus)
-	}
-
-	// Обновляем адрес, если статус равен "registered"
-	_, err = s.db.Exec("UPDATE parcel SET Address = :address WHERE Number = :number",
+	_, err := s.db.Exec("UPDATE parcel SET address = :address WHERE number = :number AND status = 'registered'",
 		sql.Named("address", address),
 		sql.Named("number", number))
 	if err != nil {
-		return fmt.Errorf("ошибка при обновлении адреса посылки: %w", err)
+		return fmt.Errorf("Ошибка обновления статуса %w", err)
 	}
-
 	return nil
 }
 
@@ -127,21 +111,10 @@ func (s ParcelStore) Delete(number int) error {
 	// удалять строку можно только если значение статуса registered
 
 	// Получаем текущий статус посылки
-	var currentStatus string
-	err := s.db.QueryRow("SELECT status FROM parcel WHERE number = :number", sql.Named("number", number)).Scan(&currentStatus)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("посылка с номером %d не найдена", number)
-		}
-		return fmt.Errorf("ошибка при получении статуса посылки: %w", err)
-	}
 
-	// Проверяем, что статус равен "registered"
-	if currentStatus == "registered" {
-		_, err = s.db.Exec("DELETE FROM parcel WHERE Number = :number", sql.Named("number", number))
-		if err != nil {
-			return fmt.Errorf("ошибка при удалении посылки: %w", err)
-		}
+	_, err := s.db.Exec("DELETE FROM parcel WHERE number = :number AND status = 'registered'", sql.Named("number", number))
+	if err != nil {
+		return fmt.Errorf("Ошибка при удалении %w", err)
 	}
 	return nil
 }
