@@ -101,7 +101,7 @@ func (s ParcelStore) SetAddress(number int, address string) error {
 		sql.Named("address", address),
 		sql.Named("number", number))
 	if err != nil {
-		return fmt.Errorf("Ошибка обновления статуса %w", err)
+		return err
 	}
 	return nil
 }
@@ -114,7 +114,7 @@ func (s ParcelStore) Delete(number int) error {
 
 	_, err := s.db.Exec("DELETE FROM parcel WHERE number = :number AND status = 'registered'", sql.Named("number", number))
 	if err != nil {
-		return fmt.Errorf("Ошибка при удалении %w", err)
+		return err
 	}
 	return nil
 }
